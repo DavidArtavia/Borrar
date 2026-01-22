@@ -497,4 +497,4 @@ $$;
 
 ## Conclusión
 
-Entender las diferencias entre procedimientos almacenados y funciones te permitirá tomar decisiones informadas sobre cuál usar en cada caso. Los procedimientos almacenados destacan por su flexibilidad, mientras que las funciones brillan en eficiencia para cálculos simples y determin��sticos. La elección correcta dependerá de los requisitos de tu lógica de negocio.
+Es necesario definir si vamos a usar procedure o funtion.

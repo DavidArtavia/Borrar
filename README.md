@@ -175,7 +175,7 @@ DTB/
 
 ### Descripción de Archivos
 
-1. **`01-Create.sql`**:
+1. **`01-Create_DB.sql`**:
    - Archivo principal que ejecuta la creación de la base de datos.
    - Incluye instrucciones como:
      ```sql

@@ -158,7 +158,7 @@ La estructura de carpetas sigue un orden lógico para favorecer la mantenibilida
 ```
 DTB/
 └── Producto Base/
-    ├── 01-Create.sql
+    ├── 01-Create_DB.sql
     ├── 02-Schemas.sql
     ├── 03-Tables/
     │   ├── USERS.sql

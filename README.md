@@ -339,6 +339,130 @@ $$;
 
 ---
 
+# NOTA IMPORTANTE:
+# Procedimientos Almacenados (Stored Procedures) vs. Funciones
+
+Tanto las funciones como los procedimientos almacenados (SP) son componentes críticos para encapsular la lógica empresarial dentro de una base de datos. Sin embargo, tienen características y propósitos distintos que determinan cuándo es más apropiado usar uno sobre otro.
+
+---
+
+## Diferencias Clave entre Procedimientos y Funciones
+
+| Aspecto                       | Procedimientos Almacenados (SP)                        | Funciones                                   |
+|-------------------------------|-------------------------------------------------------|--------------------------------------------|
+| **Propósito**                 | Ejecución de un conjunto de operaciones o tareas.     | Devolver un valor (o valores) como resultado de un cálculo. |
+| **Retorno**                   | Pueden devolver múltiples conjuntos de resultados (`OUT` o tablas) o no devolver nada. | Devuelven siempre un valor, ya sea escalar o una tabla. |
+| **Uso en Consultas**          | No pueden ser utilizadas dentro de una consulta SQL.  | Se pueden llamar desde dentro de una consulta. |
+| **Parámetros de Salida**      | Admiten parámetros de entrada (`IN`), salida (`OUT`) y entrada/salida (`INOUT`). | Solo permiten parámetros de entrada. |
+| **Efectos Secundarios**       | Pueden realizar cambios (inserciones, actualizaciones, etc.) en la base de datos. | Generalmente no deben modificar el estado de la base de datos. |
+| **Performance**               | A menudo más flexibles, pero menos optimizadas en consultas repetitivas. | Diseñadas para operaciones determinísticas y rápidas. |
+| **Transacciones**             | Pueden manejar transacciones explícitas.             | No pueden iniciar transacciones explícitas. |
+
+---
+
+## ¿Por Qué Usar un Procedimiento Almacenado en Lugar de una Función?
+
+1. **Tareas Complejas**:
+   Cuando se necesita ejecutar múltiples operaciones, tales como inserciones, actualizaciones y llamadas a otros procedimientos, un SP es ideal, ya que permite estructurar el flujo de trabajo.
+
+2. **Parámetros de Salida**:
+   Los SP permiten acceder a múltiples valores de salida, lo que es útil para devolver resultados complejos sin estar limitado al retorno de valores específicos como en una función.
+
+3. **Control de Transacciones**:
+   Un SP puede manejar transacciones explícitamente (`BEGIN`, `COMMIT`, `ROLLBACK`), lo que lo hace más adecuado para operaciones críticas donde la atomicidad es esencial.
+
+4. **Efectos Secundarios**:
+   Si la lógica requiere cambios directos en los datos de la base de datos, como una inserción o actualización, los SP son la elección correcta.
+
+5. **Mayor Flexibilidad**:
+   Un SP puede devolver múltiples conjuntos de resultados, realizar validaciones, manejar excepciones y registrar auditorías.
+
+Por el contrario, las funciones se prefieren cuando se necesita realizar cálculos rápidos o transformar datos en el contexto de una consulta.
+
+---
+
+## Ejemplo de Procedimiento Almacenado (SP)
+
+El siguiente SP gestiona un registro completo que incluye validaciones, inserciones y auditoría:
+
+```sql
+CREATE OR REPLACE PROCEDURE SP_CREATE_USER(
+  P_NAME VARCHAR,
+  P_EMAIL VARCHAR,
+  P_PASSWORD VARCHAR,
+  OUT P_CREATED BOOLEAN
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  -- Verificación de duplicidad
+  IF EXISTS (SELECT 1 FROM USERS WHERE EMAIL = P_EMAIL) THEN
+    RAISE EXCEPTION 'EMAIL_ALREADY_EXISTS';
+  END IF;
+
+  -- Inserción
+  INSERT INTO USERS (NAME, EMAIL, PASSWORD_HASH)
+  VALUES (P_NAME, P_EMAIL, crypt(P_PASSWORD, gen_salt('bf')));
+
+  -- Indicar que el usuario se creó correctamente
+  P_CREATED := TRUE;
+
+  -- Registrar en auditoría
+  INSERT INTO AUDIT_LOGS (ACTION, DETAILS)
+  VALUES ('USER_CREATED', P_EMAIL);
+END;
+$$;
+```
+
+### Explicación del SP:
+- **Manejo Complejo**: Realiza varias operaciones como validaciones e inserciones.
+- **Parámetro de Salida**: Usa `OUT P_CREATED` para devolver un valor.
+- **Auditoría**: Registra la acción realizada.
+
+---
+
+## Ejemplo de Función
+
+El siguiente ejemplo muestra una función que calcula y devuelve el índice de masa corporal (BMI) a partir de un peso y altura proporcionados:
+
+```sql
+CREATE OR REPLACE FUNCTION FN_CALCULATE_BMI(
+  P_WEIGHT NUMERIC,
+  P_HEIGHT NUMERIC
+)
+RETURNS NUMERIC
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  -- Cálculo del BMI
+  RETURN P_WEIGHT / (P_HEIGHT * P_HEIGHT);
+END;
+$$;
+```
+
+### Explicación de la Función:
+- **Enfoque Determinístico**: Realiza un cálculo puro basado en parámetros de entrada.
+- **Integración en Consultas**: Puede usarse directamente en una consulta para calcular el BMI de usuarios.
+  ```sql
+  SELECT NAME, FN_CALCULATE_BMI(WEIGHT, HEIGHT) AS BMI FROM USERS;
+  ```
+
+---
+
+## Cuándo Usar Cada Uno
+
+1. **Usar Procedimientos (SP)**:
+   - Al manejar procesos de negocio grandes que implican múltiples pasos (por ejemplo: registro o transacciones financieras).
+   - Cuando necesitas manipular datos (inserción, actualizaciones).
+   - Si requieres parámetros de entrada/salida.
+
+2. **Usar Funciones**:
+   - Para cálculos repetitivos como cálculos matemáticos o transformaciones de datos.
+   - Cuando necesites llamarlas dentro de consultas SQL.
+   - En situaciones que no impliquen efectos secundarios en la base de datos.
+
+---
+
 ## Conclusión
 
-Esta estructura modular basada en esquemas y carpetas mejora significativamente la organización y la capacidad de mantenimiento del proyecto. Al seguir estándares claros, garantizamos un sistema eficiente, seguro y escalable.
+Entender las diferencias entre procedimientos almacenados y funciones te permitirá tomar decisiones informadas sobre cuál usar en cada caso. Los procedimientos almacenados destacan por su flexibilidad, mientras que las funciones brillan en eficiencia para cálculos simples y determin��sticos. La elección correcta dependerá de los requisitos de tu lógica de negocio.

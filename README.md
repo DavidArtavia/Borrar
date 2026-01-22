@@ -167,10 +167,13 @@ DTB/
     ├── 04-Procedures/
     │   ├── SP_AUTH_LOGIN.sql
     │   └── SP_AUTH_REGISTER.sql
-    └── 05-Indexes/
-        ├── IDX_USERS_EMAIL.sql
-        ├── IDX_USERS_BUSINESS_ID.sql
-        └── IDX_AUDIT_LOGS.sql
+    ├── 05-Primary Keys.sql
+    ├── 06-Foreign Keys.sql
+    ├── 07-Indexes/
+    │   ├── IDX_USERS_EMAIL.sql
+    │   ├── IDX_USERS_BUSINESS_ID.sql
+    │   └── IDX_AUDIT_LOGS.sql
+    ├── 08-CargasIniciales.sql
 ```
 
 ### Descripción de Archivos
@@ -279,8 +282,27 @@ DTB/
        END;
        $$;
        ```
+5. **`05-Primary Keys.sql`**:
+   - Define las claves primarias de las tablas en la base de datos.
+   - Ejemplo:
+     ```sql
+     ALTER TABLE USERS ADD CONSTRAINT PK_USERS PRIMARY KEY (ID);
+     ALTER TABLE BUSINESSES ADD CONSTRAINT PK_BUSINESSES PRIMARY KEY (ID);
+     ALTER TABLE AUTH_AUDIT_LOGS ADD CONSTRAINT PK_AUTH_AUDIT_LOGS PRIMARY KEY (ID);
+     ```
+6 . **`06-Foreign Keys.sql`**:
+   - Establece las claves foráneas entre las tablas, definiendo las relaciones entre ellas.
+   - Ejemplo:
+     ```sql
+     ALTER TABLE USERS ADD CONSTRAINT FK_USERS_BUSINESS_ID
+     FOREIGN KEY (BUSINESS_ID) REFERENCES BUSINESSES(ID)
+     ON DELETE RESTRICT;
 
-5. **`05-Indexes/`**:
+     ALTER TABLE AUTH_AUDIT_LOGS ADD CONSTRAINT FK_AUTH_LOGS_USER_ID
+     FOREIGN KEY (USER_ID) REFERENCES USERS(ID)
+     ON DELETE CASCADE;
+     ```
+7. **`07-Indexes/`**:
    - Contiene los índices definidos para optimizar el acceso a datos.
    - Archivos destacados:
      - **`IDX_USERS_EMAIL.sql`**:
@@ -297,6 +319,16 @@ DTB/
        ```
 
 ---
+8. **`07-CargasIniciales.sql`**:
+   - Se utiliza para insertar datos iniciales en las tablas de la base de datos.
+   - Ejemplo:
+     ```sql
+     INSERT INTO BUSINESSES (ID, NAME, PHONE, IS_ACTIVE, CREATED_AT)
+     VALUES ('11111111-1111-1111-1111-111111111111', 'Panadería San José', '+50688887777', TRUE, NOW());
+
+     INSERT INTO USERS (ID, EMAIL, PASSWORD_HASH, ROLE, BUSINESS_ID, IS_ACTIVE, CREATED_AT)
+     VALUES ('22222222-2222-2222-2222-222222222222', 'admin@panaderia.com', crypt('password123', gen_salt('bf')), 'ADMIN', '11111111-1111-1111-1111-111111111111', TRUE, NOW());
+     ```
 
 ## Uso de los Schemas y su Importancia
 
